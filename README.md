@@ -16,8 +16,9 @@ Everything runs in the browser. Nothing is uploaded and nothing needs installing
    some cost proposals) have dedicated readers that also get the project/study
    number, study description, payment stage, start and completion dates, and
    listed test materials.
-3. **Builds a general form.** With no template, it creates an "Invoice Summary"
-   .docx with a Finance / Accounting section and a Science / Operations section.
+3. **Fills a standard form.** With no template, it fills the built-in Study
+   Authorization Form (CRO Testing): contractor, invoice, cost, payment
+   conditions, testing type, timelines, materials and sign-off.
 4. **Or fills your team's own templates** from a profile file (see Profiles).
 5. **Takes manual entries.** Test materials and notes are typed or pasted in.
 6. **Leaves you in control.** Every field can be edited before download.
@@ -25,28 +26,31 @@ Everything runs in the browser. Nothing is uploaded and nothing needs installing
 ## How to use
 
 1. Open the page: https://maurwhal.github.io/CRO-invoice-automator/
-2. **Details (optional):**
-   1. **Company Name:** shown on the form, and your prefix on CRO agreement numbers (ACME_12345 gives project 12345).
-   2. **Output Document Type:** the form's title, also used in file names (default "Invoice Summary").
+2. **Upload an invoice or cost proposal.** The PDF reader fills in the standard
+   Study Authorization Form.
+3. **Optional: use a template for a specific CRO.** Load your own Word template,
+   or a team profile. Details (all optional):
+   1. **Company Name:** your prefix on CRO agreement numbers (ACME_12345 gives project 12345).
+   2. **Output Document Type:** used in file names and on the download button.
    3. **CRO Name:** filled in from the PDF. Change it if needed.
-   4. **Type of Study:** shown on the form, and your project code prefix on invoices (ABC finds ABC-123).
-3. Drop the invoice PDF.
-4. Check the fields. Anything not found is highlighted.
-5. Enter test materials and notes by hand.
-6. Download and check the file before you use it.
+   4. **Type of Study:** your project code prefix on invoices (ABC finds ABC-123).
+4. **Optional: add details the PDF reader missed.** Highlighted fields were not
+   found on the PDF. Add test materials and notes.
+5. Download and check the file before you use it.
 
 ## Your own template
 
-In step 3, **Use my own Word template** fills any .docx you give it. A
-paragraph that starts with one of these labels gets the value written after it:
+**Use my own Word template** fills any .docx you give it. A paragraph that
+starts with one of these labels gets the value written after it, in the
+template's own font:
 
-1. Company:, CRO:, Invoice Number:, Invoice Date:, Due Date:, PO Number:, Total Amount:, Payment Stage:
-2. Type of Study:, Project Number:, Study Description:, Date Started:, Completion Date:
-3. Line Items:, Test Materials:, Notes: (each entry goes on its own line under the label)
-4. Submitted by: (gets the name typed in step 3)
+1. Contractor:, Contractor's Number:, Invoice Number:, Invoice Date:, Due Date:, Testing Type:, Project Number/Name:, Date Signed:, Total Project Cost:, Payment Conditions:, Board Approval Needed?, Date Testing Started:, Estimated Date for Testing Completion/Draft Report:, PO Number:, Company:
+2. Materials being tested:, Other Notes:, Line Items: (each entry goes on its own line under the label)
+3. Submitted by: (the name typed on the page, plus today's date after "Date:" on the same line)
 
-**Download starter template** gives a blank .docx with every label, ready to
-restyle in Word. Labels your template doesn't use are skipped.
+**Download blank form** gives the built-in Study Authorization Form, which
+already uses these labels, to restyle in Word. Labels your template doesn't
+use are skipped.
 
 ## Profiles (team templates)
 

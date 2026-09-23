@@ -55,18 +55,38 @@
     <p class="muted" style="margin:12px 0 0 0;font-size:14px;line-height:1.5">Reads a CRO invoice or cost proposal (PDF) and turns it into a filled Word form, so one invoice gives both finance/accounting and science/operations what they need. Works with any CRO's invoice; certain organizations' invoices are read in more detail. Check every field before you download. Everything runs in your browser and nothing is uploaded.</p>
   </header>
 
-  <!-- 1. Details -->
+  <!-- 1. PDF -->
   <section class="card">
-    <h2><span class="step">1</span>Details <span class="small muted" style="font-weight:normal">(all optional)</span></h2>
+    <h2><span class="step">1</span>Upload an invoice or cost proposal</h2>
+    <div class="small muted" style="margin:-4px 0 10px 0">The PDF reader fills in the standard Study Authorization Form. <button class="linkbtn" id="starterBtn">Download blank form</button></div>
+    <label class="drop" id="drop">
+      <input type="file" id="pdfInput" accept="application/pdf,.pdf">
+      <div id="dropText"><b>Drop a PDF here</b> or click to choose one</div>
+    </label>
+    <div class="row" style="margin-top:12px"><span id="labPill" class="pill hidden"></span><span id="modeLine" class="small"></span></div>
+    <div id="parseNote" class="note warn hidden"></div>
+  </section>
+
+  <!-- 2. Optional template -->
+  <section class="card">
+    <h2><span class="step">2</span>Optional: use a template for a specific CRO</h2>
+    <div class="small muted" style="margin:-4px 0 12px 0">Skip this to use the standard form.</div>
+    <div id="ownTplRow" class="row small">
+      <label class="btn" for="ownTplInput" id="ownTplBtn">Use my own Word template</label>
+      <input type="file" id="ownTplInput" accept=".docx" class="hidden">
+      <button class="linkbtn hidden" id="ownTplRemove">Stop using my template</button>
+      <span class="muted">Lines that start with the same labels as the blank form (Invoice Number:, Total Project Cost:, …) get filled.</span>
+    </div>
+    <h3>Team profile and details</h3>
     <div class="fields">
       <label for="setCompany">Company Name:</label>
-      <div><input type="text" id="setCompany" placeholder="e.g. ACME"><div class="small muted hint2">Shown on the form. Also your prefix on CRO agreement numbers (ACME_12345 gives project 12345).</div></div>
+      <div><input type="text" id="setCompany" placeholder="e.g. ACME"><div class="small muted hint2">Your prefix on CRO agreement numbers (ACME_12345 gives project 12345). Also fills a "Company:" line in your own template.</div></div>
       <label for="setDocType">Output Document Type:</label>
-      <div><input type="text" id="setDocType" placeholder="e.g. Invoice Summary"><div class="small muted hint2">The form's title. Also used in file names and the download button.</div></div>
+      <div><input type="text" id="setDocType" placeholder="e.g. Study Authorization Form"><div class="small muted hint2">Used in file names and on the download button.</div></div>
       <label for="croName">CRO Name:</label>
       <div><input type="text" id="croName" placeholder="Filled in from the PDF"><div class="small muted hint2">Filled in from the PDF when it can be read. You can type or change it.</div></div>
       <label for="setStudy">Type of Study:</label>
-      <div><input type="text" id="setStudy" placeholder="e.g. ABC"><div class="small muted hint2">Shown on the form. Also your project code prefix on invoices (ABC finds ABC-123).</div></div>
+      <div><input type="text" id="setStudy" placeholder="e.g. ABC"><div class="small muted hint2">Your project code prefix on invoices (ABC finds ABC-123). Also used as the testing type when the invoice doesn’t give one.</div></div>
     </div>
     <label class="check hidden" id="profileCheck"><input type="checkbox" id="useProfile" checked><span><b id="profileCheckTitle"></b><br><span class="small" id="profileCheckSub"></span></span></label>
     <div class="small muted" style="margin-top:12px" id="profileRow">
@@ -84,9 +104,9 @@
         <label for="bName">Profile name:</label>
         <input type="text" id="bName" placeholder="e.g. ACME Summary Sheet">
         <label for="bCompany">Company Name:</label>
-        <input type="text" id="bCompany" placeholder="Must match what is typed in Details">
+        <input type="text" id="bCompany" placeholder="Must match what is typed above">
         <label for="bDocType">Output Document Type:</label>
-        <input type="text" id="bDocType" placeholder="Must match what is typed in Details">
+        <input type="text" id="bDocType" placeholder="Must match what is typed above">
       </div>
       <div class="small" style="margin:12px 0 6px 0"><b>Templates</b> <span class="muted">(one per CRO, plus an optional one for any other CRO)</span></div>
       <div id="bRows" style="display:grid;gap:8px"></div>
@@ -95,34 +115,17 @@
         <label for="bTplAny">Any other CRO:</label>
         <input type="file" id="bTplAny" accept=".docx" class="small">
       </div>
-      <div class="small muted" style="margin-top:6px">A template for "any other CRO" should use the standard labels (see "Download starter template" in step 3).</div>
+      <div class="small muted" style="margin-top:6px">A template for "any other CRO" should use the standard labels (see "Download blank form" in step 1).</div>
       <label class="small row" style="margin-top:10px;gap:6px"><input type="checkbox" id="bLoad" checked> Also load it in this browser now</label>
       <div class="row" style="margin-top:10px"><button class="btn" id="bMake">Download profile file</button></div>
       <div id="bNote" class="note hidden"></div>
     </details>
   </section>
 
-  <!-- 2. PDF -->
-  <section class="card">
-    <h2><span class="step">2</span>Invoice or cost proposal</h2>
-    <label class="drop" id="drop">
-      <input type="file" id="pdfInput" accept="application/pdf,.pdf">
-      <div id="dropText"><b>Drop a PDF here</b> or click to choose one</div>
-    </label>
-    <div class="row" style="margin-top:12px"><span id="labPill" class="pill hidden"></span></div>
-    <div id="parseNote" class="note warn hidden"></div>
-  </section>
-
-  <!-- 3. Fields -->
+  <!-- 3. Optional details -->
   <section class="card hidden" id="fieldsCard">
-    <h2><span class="step">3</span>Check the fields</h2>
-    <div id="modeLine" class="small"></div>
-    <div id="ownTplRow" class="row small" style="margin-top:8px">
-      <label class="linkbtn" for="ownTplInput" id="ownTplBtn">Use my own Word template</label>
-      <input type="file" id="ownTplInput" accept=".docx" class="hidden">
-      <button class="linkbtn hidden" id="ownTplRemove">Stop using my template</button>
-      <button class="linkbtn" id="starterBtn">Download starter template</button>
-    </div>
+    <h2><span class="step">3</span>Optional: add details the PDF reader missed</h2>
+    <div class="small muted" style="margin:-4px 0 4px 0">Highlighted fields were not found on the PDF. Fill them in or leave them blank.</div>
     <div id="generalFields">
       <h3>Finance / Accounting</h3>
       <div class="fields" id="financeFields"></div>
@@ -132,17 +135,6 @@
     </div>
     <div id="profileFields" class="hidden" style="margin-top:12px"><div class="fields" id="fields"></div></div>
     <div class="fields" style="margin-top:14px">
-      <label for="submittedBy">Submitted by:</label>
-      <input type="text" id="submittedBy" placeholder="Your name (leave blank to sign by hand)">
-      <label for="filename">File name:</label>
-      <input type="text" id="filename">
-    </div>
-  </section>
-
-  <!-- 4. Entered by hand -->
-  <section class="card hidden" id="manualCard">
-    <h2><span class="step">4</span>Entered by hand</h2>
-    <div class="fields">
       <label for="chems">Test materials:</label>
       <div>
         <textarea id="chems" placeholder="One per line, e.g. Chemical name (CAS # 000-00-0) @ 1.00%"></textarea>
@@ -153,6 +145,12 @@
       </div>
       <label for="notes">Notes:</label>
       <textarea id="notes" placeholder="Anything else finance or operations should know"></textarea>
+    </div>
+    <div class="fields" style="margin-top:14px">
+      <label for="submittedBy">Submitted by:</label>
+      <input type="text" id="submittedBy" placeholder="Your name (leave blank to sign by hand)">
+      <label for="filename">File name:</label>
+      <input type="text" id="filename">
     </div>
   </section>
 
@@ -182,7 +180,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var IA = InvoiceAutomator, NAMES = IA.LAB_NAMES;
   var state = { lines: null, result: null, mode: 'general' };
-  var CARDS = ['fieldsCard', 'manualCard', 'goCard'];
+  var CARDS = ['fieldsCard', 'goCard'];
 
   // ── storage (per-viewer conveniences only; the page works without it) ──
   function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
@@ -330,7 +328,7 @@
 
   function updateButton() {
     var d = $('setDocType').value.trim();
-    $('goBtn').textContent = 'Download ' + (d || 'Invoice Summary') + ' (.docx)';
+    $('goBtn').textContent = 'Download ' + (d || 'Study Authorization Form') + ' (.docx)';
   }
   updateButton();
 
@@ -387,9 +385,10 @@
     $('modeLine').innerHTML = '<span class="pill"></span>';
     $('modeLine').firstChild.className = 'pill' + (pick.kind === 'builtin' ? '' : ' ok');
     $('modeLine').firstChild.textContent = pick.kind === 'builtin'
-      ? 'Built-in form: ' + ($('setDocType').value.trim() || 'Invoice Summary')
-      : 'Filling ' + pick.tpl.name + (pick.source === 'profile' ? ' from the ' + profile.name + ' profile' : ' (your template)');
+      ? 'Built-in form: ' + ($('setDocType').value.trim() || 'Study Authorization Form')
+      : 'Filling ' + pick.tpl.name + (pick.source === 'profile' ? ' from the ' + profile.name + ' profile' : pick.source === 'own' ? ' (your template)' : ' (built-in form)');
     $('ownTplRow').classList.toggle('hidden', pick.source === 'profile');
+    $('modeLine').firstChild.className = 'pill' + (pick.source === 'profile' || pick.source === 'own' ? ' ok' : '');
     refreshOwnTemplate();
     if (state.mode === 'profile') {
       renderTemplateFields(r);
@@ -415,6 +414,7 @@
       if (T['*']) return { kind: 'labels', tpl: T['*'], source: 'profile' };
     }
     if (ownTemplate) return { kind: 'labels', tpl: ownTemplate, source: 'own' };
+    if (builtinForm) return { kind: 'labels', tpl: builtinForm, source: 'builtin' };
     return { kind: 'builtin' };
   }
 
@@ -437,9 +437,15 @@
     ownTemplate = null; store('ia.ownTemplate', null);
     if (state.lines) runParse();
   });
-  $('starterBtn').addEventListener('click', async function () {
-    var title = $('setDocType').value.trim() || 'Invoice Summary';
-    download(await IA.buildStarterTemplate(title), title + ' starter template.docx');
+  // The built-in form ships with the site. If it can't be fetched (e.g. the
+  // page was opened from a file), a simpler form is generated instead.
+  var BUILTIN_URL = 'templates/study-authorization-form.docx';
+  var builtinForm = null;
+  fetch(BUILTIN_URL).then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+    .then(function (buf) { builtinForm = { name: 'Study Authorization Form (CRO Testing).docx', buf: buf }; if (state.lines) runParse(); })
+    .catch(function () { $('starterBtn').classList.add('hidden'); });
+  $('starterBtn').addEventListener('click', function () {
+    if (builtinForm) download(new Blob([builtinForm.buf], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }), builtinForm.name);
   });
 
   function addField(box, id, label, value) {
@@ -477,7 +483,7 @@
   }
   $('goBtn').addEventListener('click', async function () {
     var r = state.result;
-    var fname = $('filename').value.trim() || 'Invoice Summary.docx';
+    var fname = $('filename').value.trim() || 'Study Authorization Form.docx';
     if (!/\.docx$/i.test(fname)) fname += '.docx';
     this.disabled = true;
     try {
@@ -496,24 +502,25 @@
         var blank = fields.filter(function (f) { return !f.value; }).map(function (f) { return f.label; });
         if (blank.length) { warn = true; msgs.push('Left blank: ' + blank.join(', ') + '.'); }
       } else if (state.pick.kind === 'labels') {
-        var sv = { company: $('setCompany').value.trim() };
+        var sv = { company: $('setCompany').value.trim(), studyType: $('setStudy').value.trim() };
         IA.SUMMARY_FIELDS.forEach(function (f) { sv[f[1]] = $('s_' + f[1]).value.trim(); });
-        var L = IA.TEMPLATE_LABELS, LL = IA.TEMPLATE_LISTS;
-        var res = await IA.fillTemplate(bufFromB64(state.pick.tpl.b64), {
-          fields: Object.keys(L).map(function (k) { return { label: L[k], value: sv[k] }; }),
-          lists: [{ label: LL.lineItems, lines: lines('lineItems') }, { label: LL.materials, lines: lines('chems') }, { label: LL.notes, lines: lines('notes') }],
-          chems: lines('chems'), submittedBy: $('submittedBy').value.trim(), extraParas: []
+        var vals = { materials: lines('chems'), notes: lines('notes'), lineItems: lines('lineItems') };
+        var t = state.pick.tpl;
+        var res = await IA.fillTemplate(t.buf || bufFromB64(t.b64), {
+          style: 'inherit',
+          fields: IA.TEMPLATE_LABELS.map(function (x) { return { label: x[0], value: sv[x[1]] }; }).filter(function (f) { return f.value; }),
+          lists: IA.TEMPLATE_LISTS.map(function (x) { return { label: x[0], lines: vals[x[1]] }; }).filter(function (l) { return l.lines.length; }),
+          submittedBy: $('submittedBy').value.trim(), signDate: sv.dateSigned
         });
         download(res.blob, fname);
         msgs.push('Downloaded ' + fname + '.');
-        if (!res.matched.length) { warn = true; msgs.push('None of the standard labels (Invoice Number:, Total Amount:, …) were found in this template, so nothing was filled. "Download starter template" shows the labels to use.'); }
-        else if (res.unmatched.length) msgs.push('Labels not in your template (skipped): ' + res.unmatched.join(', ') + '.');
+        if (!res.matched.length) { warn = true; msgs.push('None of the standard labels (Invoice Number:, Total Project Cost:, …) were found in this template, so nothing was filled. "Download blank form" shows the labels to use.'); }
       } else {
         var s = {};
         IA.SUMMARY_FIELDS.forEach(function (f) { s[f[1]] = $('s_' + f[1]).value.trim(); });
         var blob = await IA.buildSummaryDocx({
           summary: s, lineItems: lines('lineItems'), materials: lines('chems'), notes: lines('notes'),
-          title: $('setDocType').value.trim() || 'Invoice Summary', company: $('setCompany').value.trim(),
+          title: $('setDocType').value.trim() || 'Study Authorization Form', company: $('setCompany').value.trim(),
           submittedBy: $('submittedBy').value.trim()
         });
         download(blob, fname);

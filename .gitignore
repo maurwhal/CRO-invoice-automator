@@ -5,3 +5,5 @@
 *profile*.json
 *Profile*.json
 samples/
+# ...except the generic built-in form
+!templates/study-authorization-form.docx
