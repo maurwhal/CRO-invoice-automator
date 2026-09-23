@@ -29,6 +29,11 @@
   .fields label{font-size:13px;font-weight:bold}
   @media (max-width:640px){ .fields{grid-template-columns:1fr} .fields label{margin-top:6px} }
   .hint2{margin-top:4px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px 18px}
+  .opts label{font-size:13px;display:flex;gap:6px;align-items:center;cursor:pointer}
+  .pay{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px}
+  .pay input{font:inherit;font-size:14px;width:72px;border:1px solid var(--border);border-radius:10px;padding:6px 8px}
+  .pay .bad{color:var(--warn-fg);font-weight:bold}
   .check{display:flex;gap:10px;align-items:flex-start;background:var(--ok-bg);border:1px solid var(--ok-border);color:var(--ok-fg);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:14px;cursor:pointer}
   .check input{margin-top:3px;width:16px;height:16px}
   .btn{background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 14px;cursor:pointer;font:inherit;font-size:13px;color:var(--fg)}
@@ -130,6 +135,11 @@
   <section class="card hidden" id="fieldsCard">
     <h2><span class="step">3</span>Optional: add details the PDF reader missed</h2>
     <div class="small muted" style="margin:-4px 0 4px 0">Highlighted fields were not found on the PDF. Fill them in or leave them blank.</div>
+    <div class="fields" style="margin:10px 0 4px 0">
+      <label>Category:</label><div class="opts" id="catOpts"></div>
+      <label>Endpoint:</label><div class="opts" id="endOpts"></div>
+    </div>
+    <div class="small muted">Ticked items are highlighted on the form.</div>
     <div id="generalFields">
       <h3>Finance / Accounting</h3>
       <div class="fields" id="financeFields"></div>
@@ -480,10 +490,70 @@
     inp.addEventListener('input', function () { inp.classList.toggle('missing', !inp.value.trim()); });
     box.appendChild(lab); box.appendChild(inp);
   }
+  // Payment conditions: a % for each stage, shown only when filled, max 100% total
+  function addPayment(box, pay) {
+    var lab = document.createElement('label'); lab.textContent = 'Payment conditions:';
+    var wrap = document.createElement('div'); wrap.className = 'pay';
+    IA.PAY_STAGES.forEach(function (st) {
+      var l = document.createElement('label'); l.style.fontWeight = 'normal';
+      var inp = document.createElement('input');
+      inp.type = 'number'; inp.min = 0; inp.max = 100; inp.step = 1; inp.id = 'pay_' + st[0];
+      inp.value = pay[st[0]] ? pay[st[0]] : '';
+      inp.addEventListener('input', payPreview);
+      l.appendChild(inp); l.appendChild(document.createTextNode(' % ' + st[1]));
+      wrap.appendChild(l);
+    });
+    var pv = document.createElement('span'); pv.id = 'payPreview'; pv.className = 'muted';
+    wrap.appendChild(pv);
+    box.appendChild(lab); box.appendChild(wrap);
+    payPreview();
+  }
+  function payValues() {
+    var p = {};
+    IA.PAY_STAGES.forEach(function (st) { var v = parseFloat($('pay_' + st[0]).value); if (v > 0) p[st[0]] = v; });
+    return p;
+  }
+  function payTotal(p) { return Object.keys(p).reduce(function (a, k) { return a + p[k]; }, 0); }
+  function payPreview() {
+    if (!$('payPreview')) return;
+    var p = payValues(), t = payTotal(p);
+    $('payPreview').className = t > 100 ? 'bad' : 'muted';
+    $('payPreview').textContent = t > 100 ? 'Total is ' + t + '%. It can’t be more than 100%.'
+      : (IA.formatPayment(p) ? 'Form will say: ' + IA.formatPayment(p) : 'Left blank on the form');
+  }
+  function summaryValues() {
+    var v = {};
+    IA.SUMMARY_FIELDS.forEach(function (f) { if (f[1] !== 'paymentConditions') v[f[1]] = $('s_' + f[1]).value.trim(); });
+    v.paymentConditions = IA.formatPayment(payValues());
+    return v;
+  }
+
+  // Category / Endpoint check boxes (not remembered; they change per study)
+  [['catOpts', IA.CATEGORIES], ['endOpts', IA.ENDPOINTS]].forEach(function (g) {
+    g[1].forEach(function (name) {
+      var l = document.createElement('label'), c = document.createElement('input');
+      c.type = 'checkbox'; c.value = name; c.className = 'hlOpt';
+      l.appendChild(c); l.appendChild(document.createTextNode(name));
+      $(g[0]).appendChild(l);
+    });
+  });
+  function highlightChoices() {
+    return Array.prototype.filter.call(document.querySelectorAll('.hlOpt'), function (c) { return c.checked; }).map(function (c) { return c.value; });
+  }
+  function highlightMsg(res, hl) {
+    var out = [];
+    if (res.highlighted && res.highlighted.length) out.push('Highlighted: ' + res.highlighted.join(', ') + '.');
+    var missing = hl.filter(function (n) { return (res.highlighted || []).indexOf(n) < 0; });
+    if (missing.length) out.push('Not on this template, so not highlighted: ' + missing.join(', ') + '.');
+    return out;
+  }
+
   function renderSummaryFields(s) {
     $('financeFields').innerHTML = ''; $('scienceFields').innerHTML = '';
     IA.SUMMARY_FIELDS.forEach(function (f) {
-      addField($(f[0] === 'finance' ? 'financeFields' : 'scienceFields'), 's_' + f[1], f[2] + ':', s[f[1]]);
+      var box = $(f[0] === 'finance' ? 'financeFields' : 'scienceFields');
+      if (f[1] === 'paymentConditions') addPayment(box, s.payment || {});
+      else addField(box, 's_' + f[1], f[2] + (/\?$/.test(f[2]) ? '' : ':'), s[f[1]]);
     });
   }
   function renderTemplateFields(r) {
@@ -508,6 +578,11 @@
     var r = state.result;
     var fname = $('filename').value.trim() || 'Study Authorization Form.docx';
     if (!/\.docx$/i.test(fname)) fname += '.docx';
+    if (state.pick.kind !== 'reader' && payTotal(payValues()) > 100) {
+      showNote($('goNote'), 'warn', 'Payment conditions add up to more than 100%. Fix them in step 3 first.');
+      return;
+    }
+    var hl = highlightChoices();
     this.disabled = true;
     try {
       var msgs = [], warn = false;
@@ -516,32 +591,33 @@
         var fields = r.fields.map(function (f, i) { return { label: f.label, value: $('f' + i).value.trim() }; });
         var notes = lines('notes');
         var out = await IA.fillTemplate(bufFromB64(tpl.b64), {
-          fields: fields, chems: lines('chems'), submittedBy: $('submittedBy').value.trim(),
+          fields: fields, chems: lines('chems'), submittedBy: $('submittedBy').value.trim(), highlight: hl,
           extraParas: r.extraParas.concat(notes.length ? ['Notes: ' + notes.join('; ')] : [])
         });
         download(out.blob, fname);
         msgs.push('Downloaded ' + fname + '.');
+        msgs = msgs.concat(highlightMsg(out, hl));
         if (out.unmatched.length) { warn = true; msgs.push('Not found in the template, so not filled: ' + out.unmatched.join(', ') + '.'); }
         var blank = fields.filter(function (f) { return !f.value; }).map(function (f) { return f.label; });
         if (blank.length) { warn = true; msgs.push('Left blank: ' + blank.join(', ') + '.'); }
       } else if (state.pick.kind === 'labels') {
-        var sv = { company: $('setCompany').value.trim(), studyType: $('setStudy').value.trim() };
-        IA.SUMMARY_FIELDS.forEach(function (f) { sv[f[1]] = $('s_' + f[1]).value.trim(); });
+        var sv = summaryValues();
+        sv.company = $('setCompany').value.trim(); sv.studyType = $('setStudy').value.trim();
         var vals = { materials: lines('chems'), notes: lines('notes'), lineItems: lines('lineItems') };
         var t = state.pick.tpl;
         var res = await IA.fillTemplate(t.buf || bufFromB64(t.b64), {
           style: 'inherit',
           fields: IA.TEMPLATE_LABELS.map(function (x) { return { label: x[0], value: sv[x[1]] }; }).filter(function (f) { return f.value; }),
           lists: IA.TEMPLATE_LISTS.map(function (x) { return { label: x[0], lines: vals[x[1]] }; }).filter(function (l) { return l.lines.length; }),
-          submittedBy: $('submittedBy').value.trim(), signDate: sv.dateSigned
+          submittedBy: $('submittedBy').value.trim(), signDate: sv.dateSigned, highlight: hl
         });
         download(res.blob, fname);
         msgs.push('Downloaded ' + fname + '.');
+        msgs = msgs.concat(highlightMsg(res, hl));
         if (!res.matched.length) { warn = true; msgs.push('None of the standard labels (Invoice Number:, Total Project Cost:, …) were found in this template, so nothing was filled. "Download blank form" shows the labels to use.'); }
         if (res.kept.length) msgs.push('Kept the template’s own text for: ' + res.kept.map(function (l) { return l.replace(/[:?]$/, ''); }).join(', ') + '.');
       } else {
-        var s = {};
-        IA.SUMMARY_FIELDS.forEach(function (f) { s[f[1]] = $('s_' + f[1]).value.trim(); });
+        var s = summaryValues();
         var blob = await IA.buildSummaryDocx({
           summary: s, lineItems: lines('lineItems'), materials: lines('chems'), notes: lines('notes'),
           title: $('setDocType').value.trim() || 'Study Authorization Form', company: $('setCompany').value.trim(),

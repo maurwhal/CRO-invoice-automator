@@ -35,7 +35,11 @@ Everything runs in the browser. Nothing is uploaded and nothing needs installing
    3. **CRO Name:** filled in from the PDF. Change it if needed.
    4. **Type of Study:** your project code prefix on invoices (ABC finds ABC-123).
 4. **Optional: add details the PDF reader missed.** Highlighted fields were not
-   found on the PDF. Add test materials and notes.
+   found on the PDF. Add test materials and notes, and:
+   1. **Category / Endpoint:** tick the boxes; those words are highlighted on the form.
+   2. **Payment conditions:** a % for Initiation, Completion and Report (up to 100% in
+      total). Only filled stages appear, e.g. "100% Initiation" or "50% Initiation, 50% Completion".
+   3. **Board approval needed?** defaults to No.
 5. Download and check the file before you use it.
 
 ## Your own template
