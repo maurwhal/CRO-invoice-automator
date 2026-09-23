@@ -1,0 +1,7 @@
+# Never commit invoices, templates, profiles or generated forms
+*.pdf
+*.docx
+*.doc
+*profile*.json
+*Profile*.json
+samples/

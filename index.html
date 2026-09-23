@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRO Invoice Automator • Marvelous Maura Model</title>
+<style>
+  :root { --bg:#eaf3fb; --fg:#14213d; --muted:#3d5a80; --card:#ffffff; --border:#dbe9f7; --accent:#0284c7; --accent-dark:#075985; --pill-bg:#e0f2fe; --pill-border:#bae6fd; --warn-bg:#fef3c7; --warn-fg:#92400e; --warn-border:#fde68a; --ok-bg:#dcfce7; --ok-fg:#166534; --ok-border:#bbf7d0; }
+  *{box-sizing:border-box}
+  body{ margin:0; font-family:Tahoma, "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, sans-serif; background:var(--bg); color:var(--fg) }
+  .container{max-width:960px;margin:0 auto;padding:32px 16px;display:grid;gap:20px}
+  h1{font-size:27px;margin:0 0 4px 0;letter-spacing:-0.01em}
+  h2{font-size:17px;margin:0 0 10px 0}
+  h3{font-size:14px;margin:16px 0 8px 0;color:var(--accent-dark)}
+  .muted{color:var(--muted)} .small{font-size:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04);padding:20px}
+  .step{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:var(--pill-bg);border:1px solid var(--pill-border);color:var(--accent-dark);font-size:13px;margin-right:8px}
+  .drop{display:block;border:2px dashed var(--pill-border);border-radius:12px;padding:22px;text-align:center;cursor:pointer;transition:background .15s ease}
+  .drop.over,.drop:hover{background:#f0f9ff}
+  .drop input{display:none}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .pill{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--pill-bg);color:var(--accent-dark);border:1px solid var(--pill-border)}
+  .pill.warn{background:var(--warn-bg);color:var(--warn-fg);border-color:var(--warn-border)}
+  .pill.ok{background:var(--ok-bg);color:var(--ok-fg);border-color:var(--ok-border)}
+  input[type=text],textarea{font:inherit;font-size:14px;color:var(--fg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:#fff;width:100%}
+  textarea{min-height:80px;resize:vertical}
+  input.missing{background:var(--warn-bg);border-color:var(--warn-border)}
+  .fields{display:grid;grid-template-columns:minmax(160px,300px) 1fr;gap:8px 12px;align-items:center}
+  .fields label{font-size:13px;font-weight:bold}
+  @media (max-width:640px){ .fields{grid-template-columns:1fr} .fields label{margin-top:6px} }
+  .hint2{margin-top:4px}
+  .check{display:flex;gap:10px;align-items:flex-start;background:var(--ok-bg);border:1px solid var(--ok-border);color:var(--ok-fg);border-radius:10px;padding:10px 12px;margin-top:14px;font-size:14px;cursor:pointer}
+  .check input{margin-top:3px;width:16px;height:16px}
+  .btn{background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 14px;cursor:pointer;font:inherit;font-size:13px;color:var(--fg)}
+  .btn:hover{background:#f1f5f9}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-size:15px;padding:10px 18px}
+  .btn.primary:hover{background:var(--accent-dark)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .linkbtn{background:none;border:none;color:var(--accent-dark);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px;padding:0}
+  .note{font-size:13px;border-radius:10px;padding:10px 12px;margin-top:10px}
+  .note.warn{background:var(--warn-bg);color:var(--warn-fg);border:1px solid var(--warn-border)}
+  .note.ok{background:var(--ok-bg);color:var(--ok-fg);border:1px solid var(--ok-border)}
+  .note.info{background:#f0f9ff;color:var(--accent-dark);border:1px solid var(--pill-border)}
+  pre.hint{white-space:pre-wrap;font:inherit;font-size:13px;margin:6px 0 0 0}
+  .hidden{display:none !important}
+  footer{font-size:12px;color:var(--muted);text-align:center;margin-top:4px}
+  footer pre{font-family:ui-monospace,Consolas,monospace;font-size:11px;line-height:1.2;margin:10px 0 4px 0;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>CRO Invoice Automator</h1>
+    <div class="muted small">A <a href="https://github.com/maurwhal" target="_blank" rel="noopener noreferrer"><b>Marvelous Maura Model</b></a> tool • by Maura Lavelle</div>
+    <p class="muted" style="margin:12px 0 0 0;font-size:14px;line-height:1.5">Reads a CRO invoice or cost proposal (PDF) and turns it into a filled Word form, so one invoice gives both finance/accounting and science/operations what they need. Works with any CRO's invoice; SGS, TKL, IIVS and Hilltop invoices are read in more detail. Check every field before you download. Everything runs in your browser and nothing is uploaded.</p>
+  </header>
+
+  <!-- 1. Details -->
+  <section class="card">
+    <h2><span class="step">1</span>Details <span class="small muted" style="font-weight:normal">(all optional)</span></h2>
+    <div class="fields">
+      <label for="setCompany">Company Name:</label>
+      <div><input type="text" id="setCompany" placeholder="e.g. ACME"><div class="small muted hint2">Shown on the form. Also your prefix on CRO agreement numbers (ACME_12345 gives project 12345).</div></div>
+      <label for="setDocType">Output Document Type:</label>
+      <div><input type="text" id="setDocType" placeholder="e.g. Invoice Summary"><div class="small muted hint2">The form's title. Also used in file names and the download button.</div></div>
+      <label for="croName">CRO Name:</label>
+      <div><input type="text" id="croName" list="croList" placeholder="Filled in from the PDF"><datalist id="croList"></datalist><div class="small muted hint2">Filled in from the PDF. Detailed readers: <span id="croBuiltIn"></span>.</div></div>
+      <label for="setStudy">Type of Study:</label>
+      <div><input type="text" id="setStudy" placeholder="e.g. ABC"><div class="small muted hint2">Shown on the form. Also your project code prefix on invoices (ABC finds ABC-123).</div></div>
+    </div>
+    <label class="check hidden" id="profileCheck"><input type="checkbox" id="useProfile" checked><span><b id="profileCheckTitle"></b><br><span class="small" id="profileCheckSub"></span></span></label>
+    <div class="small muted" style="margin-top:12px" id="profileRow">
+      <span id="profileStatus">Have a profile file from your team?</span>
+      <label class="linkbtn" for="profileInput" id="profileLoadBtn">Load profile</label>
+      <input type="file" id="profileInput" accept=".json,application/json" class="hidden">
+      <button class="linkbtn hidden" id="profileRemove">Remove profile</button>
+    </div>
+    <div class="small muted">Company Name, Output Document Type, Type of Study and a loaded profile are remembered in this browser only.</div>
+
+    <details id="builder" style="margin-top:14px">
+      <summary class="small" style="cursor:pointer;color:var(--accent-dark)"><b>Make a profile from your templates</b></summary>
+      <div class="small muted" style="margin:8px 0 10px 0">Bundle your team's blank Word templates into one profile file. Keep the file somewhere private (e.g. a shared drive) and have teammates load it with "Load profile". When someone types the Company Name and Output Document Type below, the check box to use these templates appears.</div>
+      <div class="fields">
+        <label for="bName">Profile name:</label>
+        <input type="text" id="bName" placeholder="e.g. ACME Summary Sheet">
+        <label for="bCompany">Company Name:</label>
+        <input type="text" id="bCompany" placeholder="Must match what is typed in Details">
+        <label for="bDocType">Output Document Type:</label>
+        <input type="text" id="bDocType" placeholder="Must match what is typed in Details">
+      </div>
+      <div class="fields" id="bTemplates" style="margin-top:8px"></div>
+      <label class="small row" style="margin-top:10px;gap:6px"><input type="checkbox" id="bLoad" checked> Also load it in this browser now</label>
+      <div class="row" style="margin-top:10px"><button class="btn" id="bMake">Download profile file</button></div>
+      <div id="bNote" class="note hidden"></div>
+    </details>
+  </section>
+
+  <!-- 2. PDF -->
+  <section class="card">
+    <h2><span class="step">2</span>Invoice or cost proposal</h2>
+    <label class="drop" id="drop">
+      <input type="file" id="pdfInput" accept="application/pdf,.pdf">
+      <div id="dropText"><b>Drop a PDF here</b> or click to choose one</div>
+    </label>
+    <div class="row" style="margin-top:12px"><span id="labPill" class="pill hidden"></span></div>
+    <div id="parseNote" class="note warn hidden"></div>
+  </section>
+
+  <!-- 3. Fields -->
+  <section class="card hidden" id="fieldsCard">
+    <h2><span class="step">3</span>Check the fields</h2>
+    <div id="modeLine" class="small"></div>
+    <div id="generalFields">
+      <h3>Finance / Accounting</h3>
+      <div class="fields" id="financeFields"></div>
+      <div class="fields" style="margin-top:8px"><label for="lineItems">Line items:</label><textarea id="lineItems" placeholder="One per line: description $amount"></textarea></div>
+      <h3>Science / Operations</h3>
+      <div class="fields" id="scienceFields"></div>
+    </div>
+    <div id="profileFields" class="hidden" style="margin-top:12px"><div class="fields" id="fields"></div></div>
+    <div class="fields" style="margin-top:14px">
+      <label for="submittedBy">Submitted by:</label>
+      <input type="text" id="submittedBy" placeholder="Your name (leave blank to sign by hand)">
+      <label for="filename">File name:</label>
+      <input type="text" id="filename">
+    </div>
+  </section>
+
+  <!-- 4. Entered by hand -->
+  <section class="card hidden" id="manualCard">
+    <h2><span class="step">4</span>Entered by hand</h2>
+    <div class="fields">
+      <label for="chems">Test materials:</label>
+      <div>
+        <textarea id="chems" placeholder="One per line, e.g. Chemical name (CAS # 000-00-0) @ 1.00%"></textarea>
+        <div id="chemHint" class="note info hidden">
+          <div class="row" style="justify-content:space-between"><b>Found on the invoice</b><button class="btn" id="useHint">Copy into the box</button></div>
+          <pre class="hint" id="chemHintText"></pre>
+        </div>
+      </div>
+      <label for="notes">Notes:</label>
+      <textarea id="notes" placeholder="Anything else finance or operations should know"></textarea>
+    </div>
+  </section>
+
+  <!-- 5. Download -->
+  <section class="card hidden" id="goCard">
+    <div class="row">
+      <button class="btn primary" id="goBtn">Download (.docx)</button>
+      <button class="btn" id="resetBtn">Start over</button>
+    </div>
+    <div id="goNote" class="note hidden"></div>
+  </section>
+
+  <footer>
+    Runs entirely in your browser. The PDF, templates and filled form never leave your computer (pdf.js and JSZip are loaded from cdnjs). Check the output before you submit it.
+    <pre>  (\_/)   (\_/)   (\_/)   (\_/)
+  ('.'.)  ('.'.)  ('.'.)  ('.'.)
+  (")(")  (")(")  (")(")  (")(")</pre>
+    This has been a Maura Lavelle production
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="lib/invoice-automator.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var IA = InvoiceAutomator, NAMES = IA.LAB_NAMES;
+  var state = { lines: null, result: null, mode: 'general' };
+  var CARDS = ['fieldsCard', 'manualCard', 'goCard'];
+
+  // ── storage (per-viewer conveniences only; the page works without it) ──
+  function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function bufFromB64(b64) {
+    var s = atob(b64), bytes = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+    return bytes.buffer;
+  }
+  function lines(id) { return $(id).value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
+  function showNote(el, kind, msg) { el.className = 'note ' + kind; el.textContent = msg; }
+
+  // ── details ──
+  Object.keys(NAMES).forEach(function (k) { var o = document.createElement('option'); o.value = NAMES[k]; $('croList').appendChild(o); });
+  $('croBuiltIn').textContent = Object.keys(NAMES).map(function (k) { return NAMES[k]; }).join(', ');
+  [['setCompany', 'ia.company'], ['setDocType', 'ia.docType'], ['setStudy', 'ia.study'], ['submittedBy', 'ia.submittedBy']].forEach(function (p) {
+    var el = $(p[0]);
+    el.value = load(p[1]) || '';
+    el.addEventListener('input', function () { store(p[1], el.value); refreshProfileCheck(); updateButton(); });
+    if (p[0] !== 'submittedBy') el.addEventListener('change', function () { if (state.lines) runParse(); });
+  });
+  $('croName').addEventListener('change', function () { if (state.lines) runParse(); });
+  function settings() { return { company: $('setCompany').value, docType: $('setDocType').value, cro: $('croName').value, study: $('setStudy').value }; }
+  function croKey(name) { // '' -> null (detect), known reader -> key, unknown -> 'other'
+    name = (name || '').trim().toLowerCase();
+    if (!name) return null;
+    for (var k in NAMES) if (k === name || NAMES[k].toLowerCase() === name) return k;
+    return 'other';
+  }
+
+  // ── profile: a private file with a team's templates. The site only knows
+  //    what the file tells it (its name, trigger words and templates). ──
+  var profile = null;
+  try { profile = JSON.parse(load('ia.profile') || 'null'); } catch (e) { profile = null; }
+  $('useProfile').checked = load('ia.useProfile') !== '0';
+  $('useProfile').addEventListener('change', function () { store('ia.useProfile', this.checked ? '1' : '0'); if (state.lines) runParse(); updateButton(); });
+
+  function profileMatches() {
+    if (!profile || !profile.match) return false;
+    var same = function (a, b) { return (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase(); };
+    return same($('setCompany').value, profile.match.company) && same($('setDocType').value, profile.match.docType);
+  }
+  function profileOn() { return profileMatches() && $('useProfile').checked; }
+  function refreshProfileCheck() {
+    $('profileStatus').textContent = profile ? 'Profile loaded: ' + profile.name + '.' : 'Have a profile file from your team?';
+    $('profileLoadBtn').textContent = profile ? 'Replace' : 'Load profile';
+    $('profileRemove').classList.toggle('hidden', !profile);
+    var show = profileMatches();
+    $('profileCheck').classList.toggle('hidden', !show);
+    if (show) {
+      var names = Object.keys(profile.templates || {}).map(function (k) { return NAMES[k] || k; });
+      $('profileCheckTitle').textContent = 'Use the ' + profile.name + ' templates';
+      $('profileCheckSub').textContent = 'Fills your ' + profile.match.docType + ' template for ' + names.join(', ') + ' instead of the general form.';
+    }
+  }
+  $('profileInput').addEventListener('change', async function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    try {
+      var p = JSON.parse(await f.text());
+      if (p.format !== 'cro-invoice-automator-profile' || !p.templates) throw new Error('not a profile file');
+      profile = p;
+      try { localStorage.setItem('ia.profile', JSON.stringify(p)); } catch (e) { /* too big or blocked: keep for this visit only */ }
+      refreshProfileCheck(); updateButton();
+      if (state.lines) runParse();
+    } catch (e) {
+      $('profileStatus').textContent = 'That file is not a CRO Invoice Automator profile.';
+    }
+  });
+  $('profileRemove').addEventListener('click', function () {
+    profile = null; store('ia.profile', null);
+    refreshProfileCheck(); updateButton();
+    if (state.lines) runParse();
+  });
+  refreshProfileCheck();
+
+  // ── profile builder ──
+  function b64FromBuf(buf) {
+    var bytes = new Uint8Array(buf), s = '';
+    for (var i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  Object.keys(NAMES).forEach(function (k) {
+    var lab = document.createElement('label');
+    lab.htmlFor = 'bTpl_' + k; lab.textContent = NAMES[k] + ' template:';
+    var inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'bTpl_' + k; inp.accept = '.docx'; inp.className = 'small';
+    $('bTemplates').appendChild(lab); $('bTemplates').appendChild(inp);
+  });
+  $('builder').addEventListener('toggle', function () {
+    if (!this.open) return;
+    if (!$('bCompany').value) $('bCompany').value = $('setCompany').value;
+    if (!$('bDocType').value) $('bDocType').value = $('setDocType').value;
+    if (!$('bName').value && $('bCompany').value && $('bDocType').value) $('bName').value = $('bCompany').value.trim() + ' ' + $('bDocType').value.trim();
+  });
+  $('bMake').addEventListener('click', async function () {
+    var name = $('bName').value.trim(), company = $('bCompany').value.trim(), docType = $('bDocType').value.trim();
+    var templates = {}, bad = [];
+    for (var k in NAMES) {
+      var f = $('bTpl_' + k).files[0];
+      if (!f) continue;
+      if (!/\.docx$/i.test(f.name)) { bad.push(f.name); continue; }
+      templates[k] = { name: f.name, b64: b64FromBuf(await f.arrayBuffer()) };
+    }
+    var missing = [];
+    if (!name) missing.push('Profile name');
+    if (!company) missing.push('Company Name');
+    if (!docType) missing.push('Output Document Type');
+    if (!Object.keys(templates).length) missing.push('at least one template');
+    if (bad.length) { showNote($('bNote'), 'warn', 'Templates must be .docx files (save a .doc as .docx in Word first): ' + bad.join(', ')); return; }
+    if (missing.length) { showNote($('bNote'), 'warn', 'Still needed: ' + missing.join(', ') + '.'); return; }
+
+    var p = { format: 'cro-invoice-automator-profile', version: 1, name: name, match: { company: company, docType: docType }, templates: templates };
+    var fname = name.replace(/[\\/:*?"<>|]+/g, ' ').trim() + ' profile.json';
+    download(new Blob([JSON.stringify(p)], { type: 'application/json' }), fname);
+    var msg = 'Downloaded ' + fname + ' with ' + Object.keys(templates).map(function (t) { return NAMES[t]; }).join(', ') + ' templates. Keep it somewhere private.';
+    if ($('bLoad').checked) {
+      profile = p;
+      try { localStorage.setItem('ia.profile', JSON.stringify(p)); } catch (e) { msg += ' (Loaded for this visit only; the browser could not store it.)'; }
+      refreshProfileCheck(); updateButton();
+      if (state.lines) runParse();
+      msg += ' Loaded in this browser.';
+    }
+    showNote($('bNote'), 'ok', msg);
+  });
+
+  function updateButton() {
+    var d = $('setDocType').value.trim();
+    $('goBtn').textContent = 'Download ' + (d || 'Invoice Summary') + ' (.docx)';
+  }
+  updateButton();
+
+  // ── PDF input ──
+  var drop = $('drop');
+  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { if (e.dataTransfer.files[0]) handlePdf(e.dataTransfer.files[0]); });
+  $('pdfInput').addEventListener('change', function () { if (this.files[0]) handlePdf(this.files[0]); });
+
+  async function handlePdf(file) {
+    $('dropText').innerHTML = 'Reading <b></b>…';
+    $('dropText').querySelector('b').textContent = file.name;
+    $('croName').value = '';
+    try {
+      state.lines = await IA.pdfToLines(await file.arrayBuffer());
+      $('dropText').innerHTML = '<b></b> <span class="muted small">(drop another to replace)</span>';
+      $('dropText').querySelector('b').textContent = file.name;
+      $('chems').value = ''; $('notes').value = '';
+      runParse(true);
+    } catch (e) {
+      $('dropText').innerHTML = '<b>Drop a PDF here</b> or click to choose one';
+      showNote($('parseNote'), 'warn', 'Could not read that PDF: ' + (e && e.message ? e.message : e));
+    }
+  }
+
+  function runParse(fresh) {
+    var typed = $('croName').value.trim(), key = croKey(typed);
+    var r = IA.parseLines(state.lines, key === 'other' ? 'none' : key, new Date(), settings());
+    state.result = r;
+    if (!typed && r.lab) $('croName').value = NAMES[r.lab];
+
+    // Mode: a matching profile with a template for this CRO, else the general form
+    var tpl = r.lab && profile && profile.templates ? profile.templates[r.lab] : null;
+    state.mode = profileOn() && tpl && r.fields.length ? 'profile' : 'general';
+
+    var pill = $('labPill');
+    pill.className = 'pill'; pill.textContent = r.kind;
+    var msgs = [];
+    if (r.error) msgs.push(r.error);
+    if (!r.lab) msgs.push(r.detected || key === 'other'
+      ? 'No detailed reader for this CRO, so the general reader was used. Check every field.'
+      : 'CRO not recognized, so the general reader was used. Check every field.');
+    if (typed && key !== 'other' && r.detected && r.detected !== r.lab) msgs.push('This looks like a ' + NAMES[r.detected] + ' PDF, but CRO Name is ' + typed + '.');
+    if (profileOn() && !tpl) msgs.push('The ' + profile.name + ' profile has no template for this CRO, so the general form is used.');
+    if (state.mode === 'profile' && r.missing.length) msgs.push('Not found on the PDF (fill in by hand): ' + r.missing.join(', '));
+    if (msgs.length) showNote($('parseNote'), 'warn', msgs.join(' ')); else $('parseNote').classList.add('hidden');
+
+    $('generalFields').classList.toggle('hidden', state.mode !== 'general');
+    $('profileFields').classList.toggle('hidden', state.mode !== 'profile');
+    if (state.mode === 'profile') {
+      $('modeLine').innerHTML = '<span class="pill ok"></span>';
+      $('modeLine').firstChild.textContent = 'Filling ' + tpl.name + ' from the ' + profile.name + ' profile';
+      renderTemplateFields(r);
+      $('filename').value = r.filename;
+    } else {
+      $('modeLine').innerHTML = '<span class="pill"></span>';
+      $('modeLine').firstChild.textContent = 'General form: ' + ($('setDocType').value.trim() || 'Invoice Summary');
+      renderSummaryFields(r.summary);
+      $('lineItems').value = (r.summary.lineItems || []).join('\n');
+      $('filename').value = r.summaryFilename;
+    }
+    if (fresh || !$('chems').value.trim()) $('chems').value = r.chems.join('\n');
+    if (r.chemHint) { $('chemHintText').textContent = r.chemHint; $('chemHint').classList.remove('hidden'); }
+    else $('chemHint').classList.add('hidden');
+    CARDS.forEach(function (id) { $(id).classList.remove('hidden'); });
+    $('goNote').classList.add('hidden');
+  }
+
+  function addField(box, id, label, value) {
+    var lab = document.createElement('label');
+    lab.htmlFor = id; lab.textContent = label;
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.id = id; inp.value = value || '';
+    if (!inp.value) inp.classList.add('missing');
+    inp.addEventListener('input', function () { inp.classList.toggle('missing', !inp.value.trim()); });
+    box.appendChild(lab); box.appendChild(inp);
+  }
+  function renderSummaryFields(s) {
+    $('financeFields').innerHTML = ''; $('scienceFields').innerHTML = '';
+    IA.SUMMARY_FIELDS.forEach(function (f) {
+      addField($(f[0] === 'finance' ? 'financeFields' : 'scienceFields'), 's_' + f[1], f[2] + ':', s[f[1]]);
+    });
+  }
+  function renderTemplateFields(r) {
+    $('fields').innerHTML = '';
+    r.fields.forEach(function (f, i) { addField($('fields'), 'f' + i, f.label, f.value); });
+  }
+
+  // ── chem hint ──
+  $('useHint').addEventListener('click', function () {
+    var cur = $('chems').value.trim();
+    $('chems').value = (cur ? cur + '\n' : '') + $('chemHintText').textContent;
+  });
+
+  // ── download ──
+  function download(blob, fname) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = fname;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+  }
+  $('goBtn').addEventListener('click', async function () {
+    var r = state.result;
+    var fname = $('filename').value.trim() || 'Invoice Summary.docx';
+    if (!/\.docx$/i.test(fname)) fname += '.docx';
+    this.disabled = true;
+    try {
+      var msgs = [], warn = false;
+      if (state.mode === 'profile') {
+        var tpl = profile.templates[r.lab];
+        var fields = r.fields.map(function (f, i) { return { label: f.label, value: $('f' + i).value.trim() }; });
+        var notes = lines('notes');
+        var out = await IA.fillTemplate(bufFromB64(tpl.b64), {
+          fields: fields, chems: lines('chems'), submittedBy: $('submittedBy').value.trim(),
+          extraParas: r.extraParas.concat(notes.length ? ['Notes: ' + notes.join('; ')] : [])
+        });
+        download(out.blob, fname);
+        msgs.push('Downloaded ' + fname + '.');
+        if (out.unmatched.length) { warn = true; msgs.push('Not found in the template, so not filled: ' + out.unmatched.join(', ') + '.'); }
+        var blank = fields.filter(function (f) { return !f.value; }).map(function (f) { return f.label; });
+        if (blank.length) { warn = true; msgs.push('Left blank: ' + blank.join(', ') + '.'); }
+      } else {
+        var s = {};
+        IA.SUMMARY_FIELDS.forEach(function (f) { s[f[1]] = $('s_' + f[1]).value.trim(); });
+        var blob = await IA.buildSummaryDocx({
+          summary: s, lineItems: lines('lineItems'), materials: lines('chems'), notes: lines('notes'),
+          title: $('setDocType').value.trim() || 'Invoice Summary', company: $('setCompany').value.trim(),
+          submittedBy: $('submittedBy').value.trim()
+        });
+        download(blob, fname);
+        msgs.push('Downloaded ' + fname + '.');
+      }
+      showNote($('goNote'), warn ? 'warn' : 'ok', msgs.join(' '));
+    } catch (e) {
+      showNote($('goNote'), 'warn', 'Could not build the document: ' + (e && e.message ? e.message : e));
+    } finally {
+      this.disabled = false;
+    }
+  });
+
+  $('resetBtn').addEventListener('click', function () {
+    state = { lines: null, result: null, mode: 'general' };
+    $('pdfInput').value = ''; $('croName').value = ''; $('chems').value = ''; $('notes').value = '';
+    $('dropText').innerHTML = '<b>Drop a PDF here</b> or click to choose one';
+    $('labPill').classList.add('hidden'); $('parseNote').classList.add('hidden');
+    CARDS.forEach(function (id) { $(id).classList.add('hidden'); });
+  });
+})();
+</script>
+</body>
+</html>
