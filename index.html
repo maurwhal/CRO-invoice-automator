@@ -64,7 +64,7 @@
       <label for="setDocType">Output Document Type:</label>
       <div><input type="text" id="setDocType" placeholder="e.g. Invoice Summary"><div class="small muted hint2">The form's title. Also used in file names and the download button.</div></div>
       <label for="croName">CRO Name:</label>
-      <div><input type="text" id="croName" list="croList" placeholder="Filled in from the PDF"><datalist id="croList"></datalist><div class="small muted hint2">Filled in from the PDF. Detailed readers: <span id="croBuiltIn"></span>.</div></div>
+      <div><input type="text" id="croName" placeholder="Filled in from the PDF"><div class="small muted hint2">Filled in from the PDF when it can be read. You can type or change it.</div></div>
       <label for="setStudy">Type of Study:</label>
       <div><input type="text" id="setStudy" placeholder="e.g. ABC"><div class="small muted hint2">Shown on the form. Also your project code prefix on invoices (ABC finds ABC-123).</div></div>
     </div>
@@ -88,7 +88,14 @@
         <label for="bDocType">Output Document Type:</label>
         <input type="text" id="bDocType" placeholder="Must match what is typed in Details">
       </div>
-      <div class="fields" id="bTemplates" style="margin-top:8px"></div>
+      <div class="small" style="margin:12px 0 6px 0"><b>Templates</b> <span class="muted">(one per CRO, plus an optional one for any other CRO)</span></div>
+      <div id="bRows" style="display:grid;gap:8px"></div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="bAddRow">Add a CRO</button></div>
+      <div class="fields" style="margin-top:8px">
+        <label for="bTplAny">Any other CRO:</label>
+        <input type="file" id="bTplAny" accept=".docx" class="small">
+      </div>
+      <div class="small muted" style="margin-top:6px">A template for "any other CRO" should use the standard labels (see "Download starter template" in step 3).</div>
       <label class="small row" style="margin-top:10px;gap:6px"><input type="checkbox" id="bLoad" checked> Also load it in this browser now</label>
       <div class="row" style="margin-top:10px"><button class="btn" id="bMake">Download profile file</button></div>
       <div id="bNote" class="note hidden"></div>
@@ -110,6 +117,12 @@
   <section class="card hidden" id="fieldsCard">
     <h2><span class="step">3</span>Check the fields</h2>
     <div id="modeLine" class="small"></div>
+    <div id="ownTplRow" class="row small" style="margin-top:8px">
+      <label class="linkbtn" for="ownTplInput" id="ownTplBtn">Use my own Word template</label>
+      <input type="file" id="ownTplInput" accept=".docx" class="hidden">
+      <button class="linkbtn hidden" id="ownTplRemove">Stop using my template</button>
+      <button class="linkbtn" id="starterBtn">Download starter template</button>
+    </div>
     <div id="generalFields">
       <h3>Finance / Accounting</h3>
       <div class="fields" id="financeFields"></div>
@@ -183,8 +196,6 @@
   function showNote(el, kind, msg) { el.className = 'note ' + kind; el.textContent = msg; }
 
   // ── details ──
-  Object.keys(NAMES).forEach(function (k) { var o = document.createElement('option'); o.value = NAMES[k]; $('croList').appendChild(o); });
-  $('croBuiltIn').textContent = Object.keys(NAMES).map(function (k) { return NAMES[k]; }).join(', ');
   [['setCompany', 'ia.company'], ['setDocType', 'ia.docType'], ['setStudy', 'ia.study'], ['submittedBy', 'ia.submittedBy']].forEach(function (p) {
     var el = $(p[0]);
     el.value = load(p[1]) || '';
@@ -213,6 +224,9 @@
     return same($('setCompany').value, profile.match.company) && same($('setDocType').value, profile.match.docType);
   }
   function profileOn() { return profileMatches() && $('useProfile').checked; }
+  // Profile template keys: a detailed reader's key, "cro:<name>" for other CROs, "*" for any other CRO
+  function tplKey(croName) { var k = croKey(croName); return k && k !== 'other' ? k : 'cro:' + croName.trim().toLowerCase(); }
+  function tplLabel(k, t) { return k === '*' ? 'any other CRO' : (t && t.cro) || NAMES[k] || k.replace(/^cro:/, ''); }
   function refreshProfileCheck() {
     $('profileStatus').textContent = profile ? 'Profile loaded: ' + profile.name + '.' : 'Have a profile file from your team?';
     $('profileLoadBtn').textContent = profile ? 'Replace' : 'Load profile';
@@ -220,7 +234,7 @@
     var show = profileMatches();
     $('profileCheck').classList.toggle('hidden', !show);
     if (show) {
-      var names = Object.keys(profile.templates || {}).map(function (k) { return NAMES[k] || k; });
+      var names = Object.keys(profile.templates || {}).map(function (k) { return tplLabel(k, profile.templates[k]); });
       $('profileCheckTitle').textContent = 'Use the ' + profile.name + ' templates';
       $('profileCheckSub').textContent = 'Fills your ' + profile.match.docType + ' template for ' + names.join(', ') + ' instead of the general form.';
     }
@@ -252,13 +266,23 @@
     for (var i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
     return btoa(s);
   }
-  Object.keys(NAMES).forEach(function (k) {
-    var lab = document.createElement('label');
-    lab.htmlFor = 'bTpl_' + k; lab.textContent = NAMES[k] + ' template:';
-    var inp = document.createElement('input');
-    inp.type = 'file'; inp.id = 'bTpl_' + k; inp.accept = '.docx'; inp.className = 'small';
-    $('bTemplates').appendChild(lab); $('bTemplates').appendChild(inp);
-  });
+  function addBuilderRow() {
+    var row = document.createElement('div');
+    row.className = 'fields bRow';
+    var name = document.createElement('input');
+    name.type = 'text'; name.placeholder = 'CRO name, as it will appear in CRO Name'; name.className = 'bCro';
+    var right = document.createElement('div'); right.className = 'row';
+    var file = document.createElement('input');
+    file.type = 'file'; file.accept = '.docx'; file.className = 'small bFile';
+    var rm = document.createElement('button');
+    rm.className = 'linkbtn'; rm.textContent = 'Remove';
+    rm.addEventListener('click', function () { row.remove(); });
+    right.appendChild(file); right.appendChild(rm);
+    row.appendChild(name); row.appendChild(right);
+    $('bRows').appendChild(row);
+  }
+  addBuilderRow();
+  $('bAddRow').addEventListener('click', addBuilderRow);
   $('builder').addEventListener('toggle', function () {
     if (!this.open) return;
     if (!$('bCompany').value) $('bCompany').value = $('setCompany').value;
@@ -267,13 +291,21 @@
   });
   $('bMake').addEventListener('click', async function () {
     var name = $('bName').value.trim(), company = $('bCompany').value.trim(), docType = $('bDocType').value.trim();
-    var templates = {}, bad = [];
-    for (var k in NAMES) {
-      var f = $('bTpl_' + k).files[0];
+    var templates = {}, bad = [], noName = 0;
+    var rows = Array.prototype.slice.call(document.querySelectorAll('#bRows .bRow'));
+    for (var i = 0; i < rows.length; i++) {
+      var cro = rows[i].querySelector('.bCro').value.trim(), f = rows[i].querySelector('.bFile').files[0];
       if (!f) continue;
+      if (!cro) { noName++; continue; }
       if (!/\.docx$/i.test(f.name)) { bad.push(f.name); continue; }
-      templates[k] = { name: f.name, b64: b64FromBuf(await f.arrayBuffer()) };
+      templates[tplKey(cro)] = { name: f.name, cro: cro, b64: b64FromBuf(await f.arrayBuffer()) };
     }
+    var any = $('bTplAny').files[0];
+    if (any) {
+      if (!/\.docx$/i.test(any.name)) bad.push(any.name);
+      else templates['*'] = { name: any.name, b64: b64FromBuf(await any.arrayBuffer()) };
+    }
+    if (noName) { showNote($('bNote'), 'warn', 'Type the CRO name next to each template.'); return; }
     var missing = [];
     if (!name) missing.push('Profile name');
     if (!company) missing.push('Company Name');
@@ -285,7 +317,7 @@
     var p = { format: 'cro-invoice-automator-profile', version: 1, name: name, match: { company: company, docType: docType }, templates: templates };
     var fname = name.replace(/[\\/:*?"<>|]+/g, ' ').trim() + ' profile.json';
     download(new Blob([JSON.stringify(p)], { type: 'application/json' }), fname);
-    var msg = 'Downloaded ' + fname + ' with ' + Object.keys(templates).map(function (t) { return NAMES[t]; }).join(', ') + ' templates. Keep it somewhere private.';
+    var msg = 'Downloaded ' + fname + ' with templates for ' + Object.keys(templates).map(function (t) { return tplLabel(t, templates[t]); }).join(', ') + '. Keep it somewhere private.';
     if ($('bLoad').checked) {
       profile = p;
       try { localStorage.setItem('ia.profile', JSON.stringify(p)); } catch (e) { msg += ' (Loaded for this visit only; the browser could not store it.)'; }
@@ -331,9 +363,12 @@
     state.result = r;
     if (!typed && r.lab) $('croName').value = NAMES[r.lab];
 
-    // Mode: a matching profile with a template for this CRO, else the general form
-    var tpl = r.lab && profile && profile.templates ? profile.templates[r.lab] : null;
-    state.mode = profileOn() && tpl && r.fields.length ? 'profile' : 'general';
+    // Which output: a profile template for this CRO (filled by its detailed reader, or
+    // by the standard labels), the profile's "any other CRO" template, your own
+    // template, or the built-in form.
+    var pick = pickTemplate(r);
+    state.pick = pick;
+    state.mode = pick.kind === 'reader' ? 'profile' : 'general';
 
     var pill = $('labPill');
     pill.className = 'pill'; pill.textContent = r.kind;
@@ -343,20 +378,23 @@
       ? 'No detailed reader for this CRO, so the general reader was used. Check every field.'
       : 'CRO not recognized, so the general reader was used. Check every field.');
     if (typed && key !== 'other' && r.detected && r.detected !== r.lab) msgs.push('This looks like a ' + NAMES[r.detected] + ' PDF, but CRO Name is ' + typed + '.');
-    if (profileOn() && !tpl) msgs.push('The ' + profile.name + ' profile has no template for this CRO, so the general form is used.');
+    if (profileOn() && pick.source !== 'profile') msgs.push('The ' + profile.name + ' profile has no template for this CRO, so the ' + (pick.kind === 'builtin' ? 'general form' : 'your own template') + ' is used.');
     if (state.mode === 'profile' && r.missing.length) msgs.push('Not found on the PDF (fill in by hand): ' + r.missing.join(', '));
     if (msgs.length) showNote($('parseNote'), 'warn', msgs.join(' ')); else $('parseNote').classList.add('hidden');
 
     $('generalFields').classList.toggle('hidden', state.mode !== 'general');
     $('profileFields').classList.toggle('hidden', state.mode !== 'profile');
+    $('modeLine').innerHTML = '<span class="pill"></span>';
+    $('modeLine').firstChild.className = 'pill' + (pick.kind === 'builtin' ? '' : ' ok');
+    $('modeLine').firstChild.textContent = pick.kind === 'builtin'
+      ? 'Built-in form: ' + ($('setDocType').value.trim() || 'Invoice Summary')
+      : 'Filling ' + pick.tpl.name + (pick.source === 'profile' ? ' from the ' + profile.name + ' profile' : ' (your template)');
+    $('ownTplRow').classList.toggle('hidden', pick.source === 'profile');
+    refreshOwnTemplate();
     if (state.mode === 'profile') {
-      $('modeLine').innerHTML = '<span class="pill ok"></span>';
-      $('modeLine').firstChild.textContent = 'Filling ' + tpl.name + ' from the ' + profile.name + ' profile';
       renderTemplateFields(r);
       $('filename').value = r.filename;
     } else {
-      $('modeLine').innerHTML = '<span class="pill"></span>';
-      $('modeLine').firstChild.textContent = 'General form: ' + ($('setDocType').value.trim() || 'Invoice Summary');
       renderSummaryFields(r.summary);
       $('lineItems').value = (r.summary.lineItems || []).join('\n');
       $('filename').value = r.summaryFilename;
@@ -367,6 +405,42 @@
     CARDS.forEach(function (id) { $(id).classList.remove('hidden'); });
     $('goNote').classList.add('hidden');
   }
+
+  function pickTemplate(r) {
+    if (profileOn()) {
+      var T = profile.templates || {};
+      if (r.lab && T[r.lab] && r.fields.length) return { kind: 'reader', tpl: T[r.lab], source: 'profile' };
+      var name = $('croName').value.trim();
+      if (name && T[tplKey(name)]) return { kind: 'labels', tpl: T[tplKey(name)], source: 'profile' };
+      if (T['*']) return { kind: 'labels', tpl: T['*'], source: 'profile' };
+    }
+    if (ownTemplate) return { kind: 'labels', tpl: ownTemplate, source: 'own' };
+    return { kind: 'builtin' };
+  }
+
+  // ── your own template (standard labels), remembered in this browser ──
+  var ownTemplate = null;
+  try { ownTemplate = JSON.parse(load('ia.ownTemplate') || 'null'); } catch (e) { ownTemplate = null; }
+  function refreshOwnTemplate() {
+    $('ownTplBtn').textContent = ownTemplate ? 'Replace my template' : 'Use my own Word template';
+    $('ownTplRemove').classList.toggle('hidden', !ownTemplate);
+  }
+  $('ownTplInput').addEventListener('change', async function () {
+    var f = this.files[0]; this.value = '';
+    if (!f) return;
+    if (!/\.docx$/i.test(f.name)) { showNote($('goNote'), 'warn', 'The template must be a .docx file (save a .doc as .docx in Word first).'); return; }
+    ownTemplate = { name: f.name, b64: b64FromBuf(await f.arrayBuffer()) };
+    try { localStorage.setItem('ia.ownTemplate', JSON.stringify(ownTemplate)); } catch (e) { /* this visit only */ }
+    if (state.lines) runParse();
+  });
+  $('ownTplRemove').addEventListener('click', function () {
+    ownTemplate = null; store('ia.ownTemplate', null);
+    if (state.lines) runParse();
+  });
+  $('starterBtn').addEventListener('click', async function () {
+    var title = $('setDocType').value.trim() || 'Invoice Summary';
+    download(await IA.buildStarterTemplate(title), title + ' starter template.docx');
+  });
 
   function addField(box, id, label, value) {
     var lab = document.createElement('label');
@@ -408,8 +482,8 @@
     this.disabled = true;
     try {
       var msgs = [], warn = false;
-      if (state.mode === 'profile') {
-        var tpl = profile.templates[r.lab];
+      if (state.pick.kind === 'reader') {
+        var tpl = state.pick.tpl;
         var fields = r.fields.map(function (f, i) { return { label: f.label, value: $('f' + i).value.trim() }; });
         var notes = lines('notes');
         var out = await IA.fillTemplate(bufFromB64(tpl.b64), {
@@ -421,6 +495,19 @@
         if (out.unmatched.length) { warn = true; msgs.push('Not found in the template, so not filled: ' + out.unmatched.join(', ') + '.'); }
         var blank = fields.filter(function (f) { return !f.value; }).map(function (f) { return f.label; });
         if (blank.length) { warn = true; msgs.push('Left blank: ' + blank.join(', ') + '.'); }
+      } else if (state.pick.kind === 'labels') {
+        var sv = { company: $('setCompany').value.trim() };
+        IA.SUMMARY_FIELDS.forEach(function (f) { sv[f[1]] = $('s_' + f[1]).value.trim(); });
+        var L = IA.TEMPLATE_LABELS, LL = IA.TEMPLATE_LISTS;
+        var res = await IA.fillTemplate(bufFromB64(state.pick.tpl.b64), {
+          fields: Object.keys(L).map(function (k) { return { label: L[k], value: sv[k] }; }),
+          lists: [{ label: LL.lineItems, lines: lines('lineItems') }, { label: LL.materials, lines: lines('chems') }, { label: LL.notes, lines: lines('notes') }],
+          chems: lines('chems'), submittedBy: $('submittedBy').value.trim(), extraParas: []
+        });
+        download(res.blob, fname);
+        msgs.push('Downloaded ' + fname + '.');
+        if (!res.matched.length) { warn = true; msgs.push('None of the standard labels (Invoice Number:, Total Amount:, …) were found in this template, so nothing was filled. "Download starter template" shows the labels to use.'); }
+        else if (res.unmatched.length) msgs.push('Labels not in your template (skipped): ' + res.unmatched.join(', ') + '.');
       } else {
         var s = {};
         IA.SUMMARY_FIELDS.forEach(function (f) { s[f[1]] = $('s_' + f[1]).value.trim(); });

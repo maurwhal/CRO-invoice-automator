@@ -35,14 +35,28 @@ Everything runs in the browser. Nothing is uploaded and nothing needs installing
 5. Enter test materials and notes by hand.
 6. Download and check the file before you use it.
 
+## Your own template
+
+In step 3, **Use my own Word template** fills any .docx you give it. A
+paragraph that starts with one of these labels gets the value written after it:
+
+1. Company:, CRO:, Invoice Number:, Invoice Date:, Due Date:, PO Number:, Total Amount:, Payment Stage:
+2. Type of Study:, Project Number:, Study Description:, Date Started:, Completion Date:
+3. Line Items:, Test Materials:, Notes: (each entry goes on its own line under the label)
+4. Submitted by: (gets the name typed in step 3)
+
+**Download starter template** gives a blank .docx with every label, ready to
+restyle in Word. Labels your template doesn't use are skipped.
+
 ## Profiles (team templates)
 
 A profile is a small JSON file a team keeps privately (for example on a shared
-drive) that holds its own Word templates for each CRO. Load it once with
-**Load profile**; the browser remembers it. When the Company Name and Output
-Document Type typed in Details match the profile, a check box appears to use
-the team's templates instead of the general form. Nothing about any team is
-built into this code; it all comes from the profile file.
+drive) that holds its Word templates, one per CRO plus an optional one for any
+other CRO. Make one on the page with **Make a profile from your templates**,
+then have teammates load it with **Load profile**; the browser remembers it.
+When the Company Name and Output Document Type typed in Details match the
+profile, a check box appears to use the team's templates. Nothing about any
+team is built into this code; it all comes from the profile file.
 
 Profile format:
 
@@ -53,26 +67,15 @@ Profile format:
   "name": "ACME Summary Sheet",
   "match": { "company": "ACME", "docType": "Summary Sheet" },
   "templates": {
-    "sgs":     { "name": "SGS template.docx",     "b64": "<base64 of the .docx>" },
-    "tkl":     { "name": "TKL template.docx",     "b64": "..." },
-    "iivs":    { "name": "IIVS template.docx",    "b64": "..." },
-    "hilltop": { "name": "Hilltop template.docx", "b64": "..." }
+    "cro:example labs": { "name": "Example Labs template.docx", "cro": "Example Labs", "b64": "<base64 of the .docx>" },
+    "*":                { "name": "Any CRO template.docx", "b64": "..." }
   }
 }
 ```
 
-A template is filled by finding paragraphs that start with these labels:
-
-| CRO | Labels filled |
-|---|---|
-| SGS | Invoice Number:, Project Name:, Panel:, Date Signed:, Total Project Cost:, Date Started:, Date for Testing Completion/Draft Report: |
-| TKL | Invoice Number:, Study Name:, Panel:, Date Signed:, Total Project Cost:, Date Started:, Date for Testing Completion/Draft Report: |
-| IIVS | Invoice Number:, IIVS Project No.:, Study Type:, Date Signed:, Total Project Cost:, Date Started:, Date for Testing Completion/Draft Report: |
-| Hilltop | Invoice:, Date Signed:, Total Project Cost:, Date Ordered/Shipped to CRO: |
-
-1. Test materials go at the end of the paragraph that starts with "List all".
-2. The "Submitted by" name goes on the "Submitted by:" line.
-3. Notes are added at the end of the form.
+Templates are filled using the standard labels above. For CROs that have a
+detailed reader, a profile template can also use that reader's own field
+labels (see the `fields` returned by each reader in `lib/invoice-automator.js`).
 
 ## Adding a detailed CRO reader
 
