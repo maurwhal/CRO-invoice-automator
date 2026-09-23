@@ -77,6 +77,10 @@
       <button class="linkbtn hidden" id="ownTplRemove">Stop using my template</button>
       <span class="muted">Lines that start with the same labels as the blank form (Invoice Number:, Total Project Cost:, …) get filled.</span>
     </div>
+    <div class="small muted" style="margin-top:10px">
+      Example: <a href="templates/example-essgeeess.docx" download="EssGeeEss Template Example.docx">EssGeeEss template</a>, the standard form with this CRO's fixed details already typed in (contractor, phone, testing type, payment conditions). Those lines are kept; the rest is filled from the invoice.
+      <button class="linkbtn" id="tryExample">Try it with your invoice</button>
+    </div>
     <h3>Team profile and details</h3>
     <div class="fields">
       <label for="setCompany">Company Name:</label>
@@ -386,7 +390,7 @@
     $('modeLine').firstChild.className = 'pill' + (pick.kind === 'builtin' ? '' : ' ok');
     $('modeLine').firstChild.textContent = pick.kind === 'builtin'
       ? 'Built-in form: ' + ($('setDocType').value.trim() || 'Study Authorization Form')
-      : 'Filling ' + pick.tpl.name + (pick.source === 'profile' ? ' from the ' + profile.name + ' profile' : pick.source === 'own' ? ' (your template)' : ' (built-in form)');
+      : 'Filling ' + pick.tpl.name + (pick.source === 'profile' ? ' from the ' + profile.name + ' profile' : pick.source === 'own' ? (pick.tpl.example ? ' (example)' : ' (your template)') : ' (built-in form)');
     $('ownTplRow').classList.toggle('hidden', pick.source === 'profile');
     $('modeLine').firstChild.className = 'pill' + (pick.source === 'profile' || pick.source === 'own' ? ' ok' : '');
     refreshOwnTemplate();
@@ -423,6 +427,7 @@
   try { ownTemplate = JSON.parse(load('ia.ownTemplate') || 'null'); } catch (e) { ownTemplate = null; }
   function refreshOwnTemplate() {
     $('ownTplBtn').textContent = ownTemplate ? 'Replace my template' : 'Use my own Word template';
+    $('ownTplRemove').textContent = ownTemplate && ownTemplate.example ? 'Stop using the example' : 'Stop using my template';
     $('ownTplRemove').classList.toggle('hidden', !ownTemplate);
   }
   $('ownTplInput').addEventListener('change', async function () {
@@ -431,11 +436,29 @@
     if (!/\.docx$/i.test(f.name)) { showNote($('goNote'), 'warn', 'The template must be a .docx file (save a .doc as .docx in Word first).'); return; }
     ownTemplate = { name: f.name, b64: b64FromBuf(await f.arrayBuffer()) };
     try { localStorage.setItem('ia.ownTemplate', JSON.stringify(ownTemplate)); } catch (e) { /* this visit only */ }
+    refreshOwnTemplate();
     if (state.lines) runParse();
   });
   $('ownTplRemove').addEventListener('click', function () {
-    ownTemplate = null; store('ia.ownTemplate', null);
+    var wasExample = ownTemplate && ownTemplate.example;
+    ownTemplate = null;
+    if (!wasExample) store('ia.ownTemplate', null);
+    else { try { ownTemplate = JSON.parse(load('ia.ownTemplate') || 'null'); } catch (e) { ownTemplate = null; } }
+    refreshOwnTemplate();
     if (state.lines) runParse();
+  });
+  // The example is used for this visit only (not remembered)
+  $('tryExample').addEventListener('click', async function () {
+    try {
+      var r = await fetch('templates/example-essgeeess.docx');
+      if (!r.ok) throw new Error(r.status);
+      ownTemplate = { name: 'EssGeeEss Template Example.docx', buf: await r.arrayBuffer(), example: true };
+      refreshOwnTemplate();
+      if (state.lines) runParse();
+      else showNote($('parseNote'), 'ok', 'Example template ready. Upload an invoice in step 1 to try it.');
+    } catch (e) {
+      showNote($('parseNote'), 'warn', 'Could not load the example template.');
+    }
   });
   // The built-in form ships with the site. If it can't be fetched (e.g. the
   // page was opened from a file), a simpler form is generated instead.
@@ -515,6 +538,7 @@
         download(res.blob, fname);
         msgs.push('Downloaded ' + fname + '.');
         if (!res.matched.length) { warn = true; msgs.push('None of the standard labels (Invoice Number:, Total Project Cost:, …) were found in this template, so nothing was filled. "Download blank form" shows the labels to use.'); }
+        if (res.kept.length) msgs.push('Kept the template’s own text for: ' + res.kept.map(function (l) { return l.replace(/[:?]$/, ''); }).join(', ') + '.');
       } else {
         var s = {};
         IA.SUMMARY_FIELDS.forEach(function (f) { s[f[1]] = $('s_' + f[1]).value.trim(); });

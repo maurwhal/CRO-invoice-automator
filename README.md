@@ -48,6 +48,13 @@ template's own font:
 2. Materials being tested:, Other Notes:, Line Items: (each entry goes on its own line under the label)
 3. Submitted by: (the name typed on the page, plus today's date after "Date:" on the same line)
 
+A CRO-specific template can have that CRO's fixed details already typed in
+after the labels (contractor name, phone, testing type, payment conditions).
+Those lines are kept as they are, and a line that ends in "$" gets just the
+amount. See the **EssGeeEss template** example on the page
+(`templates/example-essgeeess.docx`), and use **Try it with your invoice** to
+see it filled.
+
 **Download blank form** gives the built-in Study Authorization Form, which
 already uses these labels, to restyle in Word. Labels your template doesn't
 use are skipped.
