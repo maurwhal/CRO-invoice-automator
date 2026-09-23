@@ -12,8 +12,8 @@ Everything runs in the browser. Nothing is uploaded and nothing needs installing
 
 1. **Reads any CRO invoice.** A general reader pulls the invoice number, invoice
    date, due date, PO/order/agreement number, total, CRO name and line items.
-2. **Reads some CROs in more detail.** SGS, TKL, IIVS and Hilltop invoices (and
-   IIVS cost proposals) have dedicated readers that also get the project/study
+2. **Reads some CROs in more detail.** Certain organizations' invoices (and
+   some cost proposals) have dedicated readers that also get the project/study
    number, study description, payment stage, start and completion dates, and
    listed test materials.
 3. **Builds a general form.** With no template, it creates an "Invoice Summary"
